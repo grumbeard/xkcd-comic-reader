@@ -64,7 +64,7 @@ const displayController = (() => {
 
     const title = document.createElement('div');
     title.classList.add('title');
-    title.innerText = data.title;
+    title.innerText = `${data.title} [#${data.num}]`;
 
     const image = document.createElement('img');
     image.classList.add('image');
