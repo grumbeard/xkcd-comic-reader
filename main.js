@@ -1,18 +1,19 @@
 const comicFactory = (data) => {
   const comic = {};
-
+  
   comic.title = data.title;
   comic.imageURL = data.img;
   comic.num = data.num;
   comic.captions = (data.transcript.split(/{{.*}}*/))[0].split('\n\n');
   comic.altText = data.alt;
   comic.info = data;
-
+  
   return comic;
 };
 
 const contentController = (() => {
   // Responsible for deciding what content to display
+  const maxNum = 2475;
 
   function getData(index) {
     const url = `https://intro-to-js-playground.vercel.app/api/xkcd-comics/${index}`;
@@ -28,12 +29,64 @@ const contentController = (() => {
     return comic;
   }
 
-  function initReader() {
-    getData(1)
-    .then(comic => {
+  async function initReader() {
+    const comics = await arrangeComics(3, 3, maxNum);
+    displayController.renderComics(comics);
+  }
+
+  async function arrangeComics(size, currNum, maxNum) {
+    let comics = [];
+
+    const sizeBefore = Math.ceil((size - 1) / 2);
+    const sizeAfter = size - sizeBefore - 1;
+
+    let firstNumBefore = currNum - sizeBefore;
+    let lastNumBefore = currNum - 1;
+
+    let firstNumAfter = currNum + 1;
+    let lastNumAfter = currNum + sizeAfter;
+
+    // Validate number range before current comic
+    if (firstNumBefore < 1) {
+      let sizeBeforeOne = sizeBefore - currNum + 1;
+      comics.push(generateComics(maxNum - sizeBeforeOne - 1, maxNum));
+      comics.push(generateComics(1, currNum - 1));
+    }
+    else {
+      comics.push(generateComics(firstNumBefore, lastNumBefore));
+    }
+
+    // Current comic
+    comics.push(generateComics(currNum, currNum));
+
+    // Validate number range after current comic
+    if (lastNumAfter > maxNum) {
+      let sizeAfterMax = currNum + sizeAfter - maxNum;
+      comics.push(generateComics(currNum + 1, maxNum));
+      comics.push(generateComics(1, sizeAfterMax));
+    }
+    else {
+      comics.push(generateComics(firstNumAfter, lastNumAfter));
+    }
+
+    const results = await Promise.all(comics);
+    return results.flat()
+  }
+
+  async function generateComics(startNum, endNum) {
+    let comics = [];
+    let data = [];
+
+    for (let i = startNum; i <= endNum; i++) {
+      data.push(getData(i));
+    }
+
+    const comicsData = await Promise.all(data)
+    comicsData.forEach(comic => {
       const newComic = comicFactory(comic);
-      displayController.renderComics([newComic]);
+      comics.push(newComic)
     });
+    return comics;
   }
 
   return {
@@ -45,6 +98,10 @@ const displayController = (() => {
   // Responsible for displaying content
 
   const comicsContainer = document.querySelector('#comics-container');
+  const navPrev = document.querySelector('#nav-prev');
+  const navRandom = document.querySelector('#nav-random');
+  const navNext = document.querySelector('#nav-next');
+  const sizes = document.querySelectorAll('.controls-size');
 
   function renderComics(comicsData) {
     // Reset comics displayed
@@ -80,7 +137,6 @@ const displayController = (() => {
       caption.innerText = captionData;
       captions.append(caption);
     });
-    console.log(data);
 
     comic.append(title, image, captions);
 
