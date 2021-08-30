@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>xkcd Comic Reader</title>
 </head>
+
 <body>
   <div id="header"></div>
   <div id="main">
     <div id="controls-container">
       <div id="controls-nav-container">
-        <div id="nav-prev" class="controls-nav">Prev</div>
-        <div id="nav-random" class="controls-nav">Random</div>
-        <div id="nav-next" class="controls-nav">Next</div>
+        <div id="nav-prev" class="controls-nav" data-nav="prev">Prev</div>
+        <div id="nav-random" class="controls-nav" data-nav="random">Random</div>
+        <div id="nav-next" class="controls-nav" data-nav="next">Next</div>
       </div>
       <div id="controls-size-container">
         <div class="controls-size" data-size="1">1</div>
@@ -25,4 +27,5 @@
   <div id="footer"></div>
   <script src="./main.js"></script>
 </body>
+
 </html>

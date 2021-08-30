@@ -14,6 +14,8 @@ const comicFactory = (data) => {
 const contentController = (() => {
   // Responsible for deciding what content to display
   const maxNum = 2475;
+  let currNum = 3;
+  let currSize = 3;
 
   function getData(index) {
     const url = `https://intro-to-js-playground.vercel.app/api/xkcd-comics/${index}`;
@@ -30,7 +32,7 @@ const contentController = (() => {
   }
 
   async function initReader() {
-    const comics = await arrangeComics(3, 3, maxNum);
+    const comics = await arrangeComics(currSize, currNum, maxNum);
     displayController.renderComics(comics);
   }
 
@@ -89,8 +91,32 @@ const contentController = (() => {
     return comics;
   }
 
+  function setCurrSize(size) {
+    currSize = size;
+  }
+
+  function shiftCurrNum(type) {
+    switch (type) {
+      case 'prev':
+        currNum -= currSize
+        if (currNum < 1) currNum = maxNum + currNum;
+        break;
+      case 'next':
+        currNum += currSize
+        if (currNum > maxNum) currNum = currNum - maxNum;
+        break;
+      case 'random':
+        currNum = Math.floor(Math.random() * maxNum)
+        break;
+      default:
+        console.log('Invalid navigation attempt');
+    }
+  }
+
   return {
-    initReader
+    initReader,
+    setCurrSize,
+    shiftCurrNum
   };
 })();
 
@@ -98,10 +124,25 @@ const displayController = (() => {
   // Responsible for displaying content
 
   const comicsContainer = document.querySelector('#comics-container');
-  const navPrev = document.querySelector('#nav-prev');
-  const navRandom = document.querySelector('#nav-random');
-  const navNext = document.querySelector('#nav-next');
-  const sizes = document.querySelectorAll('.controls-size');
+  const navBtns = document.querySelectorAll('.controls-nav');
+  const sizeBtns = document.querySelectorAll('.controls-size');
+
+  function initInterface() {
+    sizeBtns.forEach(sizeBtn => sizeBtn.addEventListener('click', handleSizeChange));
+    navBtns.forEach(navBtn => navBtn.addEventListener('click', handleNavClick));
+  }
+
+  function handleSizeChange(e) {
+    const size = Number(e.target.dataset.size);
+    contentController.setCurrSize(size);
+    contentController.initReader();
+  }
+
+  function handleNavClick(e) {
+    const type = e.target.dataset.nav;
+    contentController.shiftCurrNum(type);
+    contentController.initReader();
+  }
 
   function renderComics(comicsData) {
     // Reset comics displayed
@@ -144,8 +185,10 @@ const displayController = (() => {
   }
 
   return {
+    initInterface,
     renderComics
   };
 })();
 
+displayController.initInterface();
 contentController.initReader();
