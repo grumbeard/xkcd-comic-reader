@@ -14,7 +14,7 @@ const comicFactory = (data) => {
 const contentController = (() => {
   // Responsible for deciding what content to display
   let maxNum = 2475;
-  let currNum = 2;
+  let currNum = 1;
   let currSize = 3;
 
   function getData(index) {
@@ -56,49 +56,17 @@ const contentController = (() => {
   }
 
   async function arrangeComics(size, currNum, maxNum) {
-    let comics = [];
-
-    const sizeBefore = Math.ceil((size - 1) / 2);
-    const sizeAfter = size - sizeBefore - 1;
-
-    let firstNumBefore = currNum - sizeBefore;
-    let lastNumBefore = currNum - 1;
-
-    let firstNumAfter = currNum + 1;
-    let lastNumAfter = currNum + sizeAfter;
-
-    // Validate number range before current comic
-    if (firstNumBefore < 1) {
-      let sizeBeforeOne = sizeBefore - currNum + 1;
-      comics.push(generateComics(maxNum - sizeBeforeOne + 1, maxNum));
-      comics.push(generateComics(1, currNum - 1));
-    }
-    else {
-      comics.push(generateComics(firstNumBefore, lastNumBefore));
-    }
-
-    // Current comic
-    comics.push(generateComics(currNum, currNum));
-
-    // Validate number range after current comic
-    if (lastNumAfter > maxNum) {
-      let sizeAfterMax = currNum + sizeAfter - maxNum;
-      comics.push(generateComics(currNum + 1, maxNum));
-      comics.push(generateComics(1, sizeAfterMax));
-    }
-    else {
-      comics.push(generateComics(firstNumAfter, lastNumAfter));
-    }
-
-    const results = await Promise.all(comics);
-    return results.flat()
+    let indexes = getRollingRange(size, currNum, maxNum)
+    
+    // Generate a comic for each num in 'indexes'
+    return await generateComics(indexes);
   }
 
-  async function generateComics(startNum, endNum) {
+  async function generateComics(indexArr) {
     let comics = [];
     let data = [];
 
-    for (let i = startNum; i <= endNum; i++) {
+    for (const i of indexArr) {
       data.push(getData(i));
     }
 
@@ -130,6 +98,60 @@ const contentController = (() => {
       default:
         console.log('Invalid navigation attempt');
     }
+  }
+
+  function getRollingRange(size, middleVal, maxVal) {
+    const sizeAdjacent = Math.ceil((size -1) / 2);
+    const firstNumBefore = middleVal - sizeAdjacent;
+    const lastNumAfter = middleVal + sizeAdjacent;
+
+    let array = []
+    
+    // OBJECTIVE: Add all comic numbers to 'array', up to current comic
+    if (firstNumBefore < 1) {
+      // Approach 1: When comics before '#1' need to be displayed
+      // Count backwards from #Max
+      for (let i = 0; i <= Math.abs(firstNumBefore); i++) {
+        array.unshift(maxVal - i);
+      }
+      // Add numbers from 1 to #Current
+      if (middleVal > 0) {
+        for (let i = 1; i <= middleVal; i++) {
+          array.push(i);
+        }
+      }
+    }
+    else {
+      // Approach 2: When no comics before '#1' need to be displayed
+      // Count backwards from #Current
+      for (let i = 0; i <= sizeAdjacent; i++) {
+        array.unshift(middleVal - i);
+      }
+    }
+
+    // OBJECTIVE: Add all comic numbers to 'array', after current comic
+    if (lastNumAfter > maxVal) {
+      // Approach 1: When comics after '#Max' need to be displayed
+      // Count forwards until #Max
+      if (middleVal < maxVal) {
+        for (let i = middleVal + 1; i <= maxVal; i++) {
+          array.push(i);
+        }
+      }
+      // Count forwards from 1
+      for (let i = 1; i < (lastNumAfter - maxVal); i++) {
+        array.push(i);
+      }
+    }
+    else {
+      // Approach 2: When no comics after '#Max' need to be displayed
+      // Count forwards from #Current
+      for (let i = 1; i <= sizeAdjacent; i++) {
+        array.push(middleVal + i)
+      }
+    }
+
+    return array;
   }
 
   return {
