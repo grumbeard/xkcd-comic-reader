@@ -51,6 +51,7 @@ const contentController = (() => {
   }
 
   async function loadReader() {
+    displayController.showLoading();
     const comics = await arrangeComics(currSize, currNum, maxNum);
     displayController.renderComics(comics);
   }
@@ -230,9 +231,20 @@ const displayController = (() => {
     return comic;
   }
 
+  function showLoading() {
+    // Reset comics displayed
+    comicsContainer.innerHTML = '';
+
+    // Display Loading animation
+    const loadingText = document.createElement('h2');
+    loadingText.innerText = "Loading...";
+    comicsContainer.append(loadingText);
+  }
+
   return {
     initInterface,
-    renderComics
+    renderComics,
+    showLoading
   };
 })();
 
