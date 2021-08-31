@@ -32,11 +32,11 @@ const contentController = (() => {
   }
 
   async function init() {
-    maxNum = await getMaxNum();
+    maxNum = await fetchMaxNum();
     loadReader();
   }
 
-  function getMaxNum() {
+  function fetchMaxNum() {
     const urlLatest = 'https://xkcd.vercel.app/?comic=latest'
 
     const numLatest = fetch(urlLatest)
@@ -48,6 +48,10 @@ const contentController = (() => {
     })
 
     return numLatest;
+  }
+
+  function getMaxNum() {
+    return maxNum;
   }
 
   async function loadReader() {
@@ -81,6 +85,7 @@ const contentController = (() => {
 
   function setCurrSize(size) {
     currSize = size;
+    loadReader();
   }
 
   function shiftCurrNum(type) {
@@ -99,6 +104,12 @@ const contentController = (() => {
       default:
         console.log('Invalid navigation attempt');
     }
+    loadReader();
+  }
+
+  function setCurrNum(num) {
+    currNum = num;
+    loadReader();
   }
 
   function getRollingRange(size, middleVal, maxVal) {
@@ -157,9 +168,10 @@ const contentController = (() => {
 
   return {
     init,
-    loadReader,
     setCurrSize,
-    shiftCurrNum
+    shiftCurrNum,
+    setCurrNum,
+    getMaxNum
   };
 })();
 
@@ -169,17 +181,18 @@ const displayController = (() => {
   const comicsContainer = document.querySelector('#comics-container');
   const navBtns = document.querySelectorAll('.controls-nav');
   const sizeBtns = document.querySelectorAll('.controls-size');
+  const reqComicForm = document.querySelector('#request-comic-form');
 
   function initInterface(contentController) {
     sizeBtns.forEach(sizeBtn => sizeBtn.addEventListener('click', handleSizeChange(contentController)));
     navBtns.forEach(navBtn => navBtn.addEventListener('click', handleNavClick(contentController)));
+    reqComicForm.addEventListener('submit', handleRequestComic(contentController));
   }
 
   function handleSizeChange(controller) {
     return e => {
       const size = Number(e.target.dataset.size);
       controller.setCurrSize(size);
-      controller.loadReader();
     }
   }
 
@@ -187,7 +200,19 @@ const displayController = (() => {
     return e => {
       const type = e.target.dataset.nav;
       controller.shiftCurrNum(type);
-      controller.loadReader();
+    }
+  }
+
+  function handleRequestComic(controller) {
+    return e => {
+      e.preventDefault();
+      const index = Number(e.target.elements['comic-index'].value);
+      const maxNum = controller.getMaxNum();
+      if (index >= 1 && index <= maxNum) {
+        controller.setCurrNum(index);
+      } else {
+        e.target.elements['comic-index'].value = `Range available 1 - ${maxNum}`;
+      }
     }
   }
 

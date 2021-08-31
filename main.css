@@ -42,6 +42,24 @@ footer:hover {
   background-color: rgba(255,255,255,0.6);
 }
 
+/* HEADER */
+
+header {
+  padding: 1em;
+  background-color: salmon;
+}
+
+#request-comic-form input {
+  border: none;
+  border-radius: 5px;
+  line-height: 2em;
+  color: gray;
+}
+
+#request-comic-form input[type=submit] {
+  background-color: lavender;
+}
+
 
 /* COMICS READER CONTROLS */
 
