@@ -57,7 +57,7 @@ const contentController = (() => {
 
   async function arrangeComics(size, currNum, maxNum) {
     let indexes = getRollingRange(size, currNum, maxNum)
-    
+
     // Generate a comic for each num in 'indexes'
     return await generateComics(indexes);
   }
@@ -162,28 +162,32 @@ const contentController = (() => {
   };
 })();
 
-const displayController = ((contentController) => {
+const displayController = (() => {
   // Responsible for displaying content
 
   const comicsContainer = document.querySelector('#comics-container');
   const navBtns = document.querySelectorAll('.controls-nav');
   const sizeBtns = document.querySelectorAll('.controls-size');
 
-  function initInterface() {
-    sizeBtns.forEach(sizeBtn => sizeBtn.addEventListener('click', handleSizeChange));
-    navBtns.forEach(navBtn => navBtn.addEventListener('click', handleNavClick));
+  function initInterface(contentController) {
+    sizeBtns.forEach(sizeBtn => sizeBtn.addEventListener('click', handleSizeChange(contentController)));
+    navBtns.forEach(navBtn => navBtn.addEventListener('click', handleNavClick(contentController)));
   }
 
-  function handleSizeChange(e) {
-    const size = Number(e.target.dataset.size);
-    contentController.setCurrSize(size);
-    contentController.loadReader();
+  function handleSizeChange(controller) {
+    return e => {
+      const size = Number(e.target.dataset.size);
+      controller.setCurrSize(size);
+      controller.loadReader();
+    }
   }
 
-  function handleNavClick(e) {
-    const type = e.target.dataset.nav;
-    contentController.shiftCurrNum(type);
-    contentController.loadReader();
+  function handleNavClick(controller) {
+    return e => {
+      const type = e.target.dataset.nav;
+      controller.shiftCurrNum(type);
+      controller.loadReader();
+    }
   }
 
   function renderComics(comicsData) {
@@ -230,7 +234,7 @@ const displayController = ((contentController) => {
     initInterface,
     renderComics
   };
-})(contentController);
+})();
 
-displayController.initInterface();
+displayController.initInterface(contentController);
 contentController.init();
