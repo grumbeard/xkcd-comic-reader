@@ -4,7 +4,7 @@ const comicFactory = (data) => {
   comic.title = data.title;
   comic.imageURL = data.img;
   comic.num = data.num;
-  comic.captions = (data.transcript.split(/{{.*}}*/))[0].split('\n\n');
+  comic.captions = (data.transcript.split(/{{.*}}*/))[0].split('\n');
   comic.altText = data.alt;
   comic.info = data;
   
@@ -63,7 +63,6 @@ const contentController = (() => {
 
   async function arrangeComics(size, currNum) {
     let indexes = getRollingRange(size, minNum, currNum, maxNum)
-    console.log(indexes);
 
     // Generate a comic for each num in 'indexes'
     return await generateComics(indexes);
@@ -176,8 +175,11 @@ const displayController = (() => {
 
   function handleSizeChange(controller) {
     return e => {
-      const size = Number(e.target.dataset.size);
+      const size = Number(e.currentTarget.dataset.size);
       controller.setCurrSize(size);
+      // Update active size button
+      sizeBtns.forEach(btn => btn.classList.remove('active'))
+      e.currentTarget.classList.add('active');
     }
   }
 
@@ -232,6 +234,10 @@ const displayController = (() => {
     data.captions.forEach(captionData => {
       const caption = document.createElement('p');
       caption.classList.add('caption');
+      
+      // Identify image descriptions (surrounded by double square brackets)
+      if (captionData.startsWith('[[')) caption.classList.add('img-desc');
+      
       caption.innerText = captionData;
       captions.append(caption);
     });

@@ -71,7 +71,7 @@ header {
 }
 
 #controls-container > * {
-  margin: 1em;
+  margin: 0.5em;
   display: flex;
   justify-content: space-around;
   cursor: pointer;
@@ -81,7 +81,7 @@ header {
   padding: 10px 2em;
   border-radius: 5px;
   color: white;
-  background-color: rgba(50,50,50,0.5);
+  background-color: rgba(50,50,50,0.6);
 }
 
 .controls-nav:hover {
@@ -92,14 +92,14 @@ header {
   width: 2em;
   height: 2em;
   border-radius: 50%;
-  border: 1px solid gray;
-  color: gray;
+  border: 1px solid rgba(50,50,50,0.4);
+  color: rgba(50,50,50,0.4);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.controls-size:hover {
+.controls-size:hover, .controls-size.active {
   background-color: white;
   border: white;
   color: rgba(50,50,50,0.5);
@@ -129,4 +129,9 @@ header {
 
 .title {
   font-size: 1.5em;
+}
+
+.img-desc {
+  color: rgba(50,50,50,0.4);
+  font-style: italic;
 }
