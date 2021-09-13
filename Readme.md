@@ -13,7 +13,7 @@ View the live page here :point_right: https://grumbeard.github.io/xkcd-comic-rea
 3. User can request a random comic to be shown by clicking "Random" or request for a specific comic by entering its number into the textbox
 4. For any comic being displayed, in batch size of > 1, the consecutive comics before and after it will be displayed accordingly on a 'rolling' basis (e.g. if the latest comic is #2000, #2000 is the comic before #1)
 5. The title and # of each comic is shown above the comic image, and any available captions are also displayed line by line below the image
-6. Alt text is also provided (as given by xkcd.com) to support screen readers
+6. Alt text (image descriptions) is also provided (as given by xkcd.com) to support screen readers
 7. 'Loading...' text is displayed when the page is busy fetching comic data from xkcd
 
 
@@ -25,4 +25,5 @@ View the live page here :point_right: https://grumbeard.github.io/xkcd-comic-rea
 
 
 ## Screenshots
-![image](https://user-images.githubusercontent.com/51464365/131468997-a01bb408-8c0e-4cc1-b6f5-a8a4bdeeed23.png)
+<img width="1439" alt="image" src="https://user-images.githubusercontent.com/51464365/133024861-175a9f5d-8131-42a0-9119-a570f96ef3c9.png">
+
