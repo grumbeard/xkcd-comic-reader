@@ -13,6 +13,7 @@ const comicFactory = (data) => {
 
 const contentController = (() => {
   // Responsible for deciding what content to display
+  let minNum = 1;
   let maxNum = 2475;
   let currNum = 1;
   let currSize = 3;
@@ -56,12 +57,13 @@ const contentController = (() => {
 
   async function loadReader() {
     displayController.showLoading();
-    const comics = await arrangeComics(currSize, currNum, maxNum);
+    const comics = await arrangeComics(currSize, currNum);
     displayController.renderComics(comics);
   }
 
-  async function arrangeComics(size, currNum, maxNum) {
-    let indexes = getRollingRange(size, currNum, maxNum)
+  async function arrangeComics(size, currNum) {
+    let indexes = getRollingRange(size, minNum, currNum, maxNum)
+    console.log(indexes);
 
     // Generate a comic for each num in 'indexes'
     return await generateComics(indexes);
@@ -112,58 +114,41 @@ const contentController = (() => {
     loadReader();
   }
 
-  function getRollingRange(size, middleVal, maxVal) {
-    const sizeAdjacent = Math.ceil((size -1) / 2);
+  function getRollingRange(size, minVal, middleVal, maxVal) {
+    const sizeAdjacent = Math.ceil((size - 1) / 2);
     const firstNumBefore = middleVal - sizeAdjacent;
     const lastNumAfter = middleVal + sizeAdjacent;
 
     let array = []
     
-    // OBJECTIVE: Add all comic numbers to 'array', up to current comic
-    if (firstNumBefore < 1) {
-      // Approach 1: When comics before '#1' need to be displayed
-      // Count backwards from #Max
-      for (let i = 0; i <= Math.abs(firstNumBefore); i++) {
-        array.unshift(maxVal - i);
-      }
-      // Add numbers from 1 to #Current
-      if (middleVal > 0) {
-        for (let i = 1; i <= middleVal; i++) {
-          array.push(i);
-        }
-      }
+    // OBJECTIVE: Generate array of numbers of given size, around middleVal, within range (minVal, maxVal)
+    // Assumption: middleVal provided is always within range
+    
+    // STEP 1: Generate array of numbers within range
+    for (let i = clamp(firstNumBefore); i <= clamp(lastNumAfter); i++) {
+      array.push(i);
     }
-    else {
-      // Approach 2: When no comics before '#1' need to be displayed
-      // Count backwards from #Current
-      for (let i = 0; i <= sizeAdjacent; i++) {
-        array.unshift(middleVal - i);
-      }
+    
+    // STEP 2: If size is sufficient, return array
+    if (array.length === size) return array;
+    
+    // STEP 3: Otherwise, add additional adjacent values as required on either side of array
+    for (let i = 0; i < (minVal - firstNumBefore); i++) {
+      array.unshift(maxVal - i);
     }
-
-    // OBJECTIVE: Add all comic numbers to 'array', after current comic
-    if (lastNumAfter > maxVal) {
-      // Approach 1: When comics after '#Max' need to be displayed
-      // Count forwards until #Max
-      if (middleVal < maxVal) {
-        for (let i = middleVal + 1; i <= maxVal; i++) {
-          array.push(i);
-        }
-      }
-      // Count forwards from 1
-      for (let i = 1; i < (lastNumAfter - maxVal); i++) {
-        array.push(i);
-      }
-    }
-    else {
-      // Approach 2: When no comics after '#Max' need to be displayed
-      // Count forwards from #Current
-      for (let i = 1; i <= sizeAdjacent; i++) {
-        array.push(middleVal + i)
-      }
+    
+    for (let i = 0; i < (lastNumAfter - maxVal); i++) {
+      array.push(minVal + i);
     }
 
     return array;
+  }
+  
+  function clamp(val) {
+    // Returns val if within range (minNum, maxNum)
+      // Else returns minNum if val < minNum
+      // Else returns maxNum if val > maxNum
+    return Math.min(Math.max(val, minNum), maxNum);
   }
 
   return {
@@ -183,10 +168,10 @@ const displayController = (() => {
   const sizeBtns = document.querySelectorAll('.controls-size');
   const reqComicForm = document.querySelector('#request-comic-form');
 
-  function initInterface(contentController) {
-    sizeBtns.forEach(sizeBtn => sizeBtn.addEventListener('click', handleSizeChange(contentController)));
-    navBtns.forEach(navBtn => navBtn.addEventListener('click', handleNavClick(contentController)));
-    reqComicForm.addEventListener('submit', handleRequestComic(contentController));
+  function initInterface(controller) {
+    sizeBtns.forEach(sizeBtn => sizeBtn.addEventListener('click', handleSizeChange(controller)));
+    navBtns.forEach(navBtn => navBtn.addEventListener('click', handleNavClick(controller)));
+    reqComicForm.addEventListener('submit', handleRequestComic(controller));
   }
 
   function handleSizeChange(controller) {
