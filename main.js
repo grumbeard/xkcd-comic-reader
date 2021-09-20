@@ -10,7 +10,7 @@ const Reader = (() => {
     
     // Init Sub-Modules
     displayModule.showLoading();
-    dataModule.init();
+    await dataModule.init();
     const maxVal = dataModule.getMaxNum();
     displayModule.init({maxVal, setSizeHandler, setNumHandler, shiftNumHandler});
     
