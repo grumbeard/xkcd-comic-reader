@@ -1,23 +1,116 @@
-const comicFactory = (data) => {
-  const comic = {};
-  
-  comic.title = data.title;
-  comic.imageURL = data.img;
-  comic.num = data.num;
-  comic.captions = (data.transcript.split(/{{.*}}*/))[0].split('\n');
-  comic.altText = data.alt;
-  comic.info = data;
-  
-  return comic;
-};
+// MAIN MODULE
 
-const contentController = (() => {
+const Reader = (() => {
+  let dataModule = undefined;
+  let displayModule = undefined;
+  
+  async function init(dataMod, displayMod) {
+    dataModule = dataMod;
+    displayModule = displayMod;
+    
+    // Init Sub-Modules
+    displayModule.showLoading();
+    dataModule.init();
+    const maxVal = dataModule.getMaxNum();
+    displayModule.init({maxVal, setSizeHandler, setNumHandler, shiftNumHandler});
+    
+    // Get and Render Comics Data
+    const data = await dataModule.generateData();
+    displayModule.renderComics(data);
+  }
+  
+  async function reload() {
+    displayModule.showLoading();
+    const data = await dataModule.generateData();
+    displayModule.renderComics(data);
+  }
+  
+  const setSizeHandler = (size) => {
+    dataModule.setCurrSize(size);
+    reload();
+  }
+  
+  const setNumHandler = (num) => {
+    dataModule.setCurrNum(num);
+    reload();
+  }
+  
+  const shiftNumHandler = (type) => {
+    dataModule.shiftCurrNum(type);
+    reload();
+  }
+  
+  return { init }
+})();
+
+
+// SUB-MODULES
+
+const ContentController = (() => {
   // Responsible for deciding what content to display
   let minNum = 1;
   let maxNum = 2475;
   let currNum = 1;
   let currSize = 3;
+  
+  const comicFactory = (data) => {
+    const comic = {};
+    
+    comic.title = data.title;
+    comic.imageURL = data.img;
+    comic.num = data.num;
+    comic.captions = (data.transcript.split(/{{.*}}*/))[0].split('\n');
+    comic.altText = data.alt;
+    comic.info = data;
+    
+    return comic;
+  };
 
+  async function init() {
+    maxNum = await fetchMaxNum();
+  }
+  
+  async function generateData() {
+    let indexes = getRollingRange(currSize, minNum, currNum, maxNum)
+    
+    // Generate a comic for each num in 'indexes'
+    return await generateComics(indexes);
+  }
+  
+  function fetchMaxNum() {
+    const urlLatest = 'https://xkcd.vercel.app/?comic=latest'
+    
+    const numLatest = fetch(urlLatest)
+    // Extract json from http response
+    .then(result => result.json())
+    // Extract and return comic index
+    .then(data => {
+      return Number(data.num);
+    })
+    
+    return numLatest;
+  }
+  
+  function getMaxNum() {
+    return maxNum;
+  }
+  
+  async function generateComics(indexArr) {
+    let comics = [];
+    let data = [];
+    
+    for (const i of indexArr) {
+      data.push(getData(i));
+    }
+    
+    const comicsData = await Promise.all(data)
+    comicsData.forEach(comic => {
+      const newComic = comicFactory(comic);
+      comics.push(newComic)
+    });
+    return comics;
+  }
+  
   function getData(index) {
     const url = `https://xkcd.vercel.app/?comic=${index}`;
 
@@ -31,62 +124,9 @@ const contentController = (() => {
 
     return comic;
   }
-
-  async function init() {
-    maxNum = await fetchMaxNum();
-    loadReader();
-  }
-
-  function fetchMaxNum() {
-    const urlLatest = 'https://xkcd.vercel.app/?comic=latest'
-
-    const numLatest = fetch(urlLatest)
-    // Extract json from http response
-    .then(result => result.json())
-    // Extract and return comic index
-    .then(data => {
-      return Number(data.num);
-    })
-
-    return numLatest;
-  }
-
-  function getMaxNum() {
-    return maxNum;
-  }
-
-  async function loadReader() {
-    displayController.showLoading();
-    const comics = await arrangeComics(currSize, currNum);
-    displayController.renderComics(comics);
-  }
-
-  async function arrangeComics(size, currNum) {
-    let indexes = getRollingRange(size, minNum, currNum, maxNum)
-
-    // Generate a comic for each num in 'indexes'
-    return await generateComics(indexes);
-  }
-
-  async function generateComics(indexArr) {
-    let comics = [];
-    let data = [];
-
-    for (const i of indexArr) {
-      data.push(getData(i));
-    }
-
-    const comicsData = await Promise.all(data)
-    comicsData.forEach(comic => {
-      const newComic = comicFactory(comic);
-      comics.push(newComic)
-    });
-    return comics;
-  }
-
+  
   function setCurrSize(size) {
     currSize = size;
-    loadReader();
   }
 
   function shiftCurrNum(type) {
@@ -105,12 +145,10 @@ const contentController = (() => {
       default:
         console.log('Invalid navigation attempt');
     }
-    loadReader();
   }
 
   function setCurrNum(num) {
     currNum = num;
-    loadReader();
   }
 
   function getRollingRange(size, minVal, middleVal, maxVal) {
@@ -155,48 +193,50 @@ const contentController = (() => {
     setCurrSize,
     shiftCurrNum,
     setCurrNum,
-    getMaxNum
+    getMaxNum,
+    generateData
   };
 })();
 
-const displayController = (() => {
+const DisplayController = (() => {
   // Responsible for displaying content
+  let maxNum = 0;
 
   const comicsContainer = document.querySelector('#comics-container');
   const navBtns = document.querySelectorAll('.controls-nav');
   const sizeBtns = document.querySelectorAll('.controls-size');
   const reqComicForm = document.querySelector('#request-comic-form');
 
-  function initInterface(controller) {
-    sizeBtns.forEach(sizeBtn => sizeBtn.addEventListener('click', handleSizeChange(controller)));
-    navBtns.forEach(navBtn => navBtn.addEventListener('click', handleNavClick(controller)));
-    reqComicForm.addEventListener('submit', handleRequestComic(controller));
+  function init({maxVal, setSizeHandler, setNumHandler, shiftNumHandler}) {
+    sizeBtns.forEach(sizeBtn => sizeBtn.addEventListener('click', handleSizeChange(setSizeHandler)));
+    navBtns.forEach(navBtn => navBtn.addEventListener('click', handleNavClick(shiftNumHandler)));
+    reqComicForm.addEventListener('submit', handleRequestComic(setNumHandler));
+    maxNum = maxVal;
   }
 
-  function handleSizeChange(controller) {
+  function handleSizeChange(handleChange) {
     return e => {
       const size = Number(e.currentTarget.dataset.size);
-      controller.setCurrSize(size);
+      handleChange(size);
       // Update active size button
       sizeBtns.forEach(btn => btn.classList.remove('active'))
       e.currentTarget.classList.add('active');
     }
   }
 
-  function handleNavClick(controller) {
+  function handleNavClick(handleChange) {
     return e => {
       const type = e.target.dataset.nav;
-      controller.shiftCurrNum(type);
+      handleChange(type);
     }
   }
 
-  function handleRequestComic(controller) {
+  function handleRequestComic(handleChange) {
     return e => {
       e.preventDefault();
       const index = Number(e.target.elements['comic-index'].value);
-      const maxNum = controller.getMaxNum();
       if (index >= 1 && index <= maxNum) {
-        controller.setCurrNum(index);
+        handleChange(index);
       } else {
         e.target.elements['comic-index'].value = `Range available 1 - ${maxNum}`;
       }
@@ -258,11 +298,13 @@ const displayController = (() => {
   }
 
   return {
-    initInterface,
+    init,
     renderComics,
     showLoading
   };
 })();
 
-displayController.initInterface(contentController);
-contentController.init();
+
+// RUN CODE
+
+Reader.init(ContentController, DisplayController);
